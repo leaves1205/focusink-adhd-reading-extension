@@ -2,6 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0"
@@ -14,15 +15,61 @@
 
   <body>
     <main class="popup">
-      <h1>FocusInk</h1>
+      <header class="popup__header">
+        <div>
+          <h1>FocusInk</h1>
+          <p>Keep your eyes on the words that matter.</p>
+        </div>
+      </header>
 
-      <p class="tagline">
-        Keep your eyes on the words that matter.
+      <section class="setting">
+        <div class="setting__content">
+          <label for="enabled">Enable FocusInk</label>
+          <p>Enhance readable text under your cursor.</p>
+        </div>
+
+        <label class="switch">
+          <input
+            id="enabled"
+            type="checkbox"
+          />
+
+          <span class="switch__slider"></span>
+        </label>
+      </section>
+
+      <section class="intensity">
+        <label for="intensity">
+          Focus intensity
+        </label>
+
+        <select id="intensity">
+          <option value="light">
+            Light
+          </option>
+
+          <option value="medium">
+            Medium
+          </option>
+
+          <option value="strong">
+            Strong
+          </option>
+        </select>
+      </section>
+
+      <p
+        id="status"
+        class="status"
+        role="status"
+      >
+        Loading settings...
       </p>
-
-      <p id="status">Loading extension...</p>
     </main>
 
-    <script src="../../dist/popup/popup.js" defer></script>
+    <script
+      src="../../dist/popup/popup.js"
+      defer
+    ></script>
   </body>
 </html>

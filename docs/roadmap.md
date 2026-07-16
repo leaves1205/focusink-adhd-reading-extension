@@ -2,22 +2,22 @@
 
 ## Milestone 0: Project Definition
 
-- [x] Define the product problem
-- [x] Define the MVP
-- [x] Define non-goals
-- [x] Design the initial architecture
-- [ ] Initialise Git
-- [ ] Initialise npm
-- [ ] Install TypeScript
+- [X] Define the product problem
+- [X] Define the MVP
+- [X] Define non-goals
+- [X] Design the initial architecture
+- [X] Initialise Git
+- [X] Initialise npm
+- [X] Install TypeScript
 
 ## Milestone 1: Loadable Browser Extension
 
-- [ ] Create a valid Manifest V3 file
-- [ ] Create a basic popup
-- [ ] Compile TypeScript
-- [ ] Build the extension directory
-- [ ] Load the extension through chrome://extensions
-- [ ] Confirm that the extension icon appears
+- [X] Create a valid Manifest V3 file
+- [X] Create a basic popup
+- [X] Compile TypeScript
+- [X] Build the extension directory
+- [X] Load the extension through chrome://extensions
+- [X] Confirm that the extension icon appears
 
 Definition of done:
 
@@ -27,12 +27,12 @@ Definition of done:
 
 ## Milestone 2: Basic Text Focus
 
-- [ ] Add pointer event listeners
-- [ ] Detect supported text elements
-- [ ] Add a focus CSS class
-- [ ] Remove the class after pointer exit
-- [ ] Ignore empty elements
-- [ ] Ignore form controls
+- [X] Add pointer event listeners
+- [X] Detect supported text elements
+- [X] Add a focus CSS class
+- [X] Remove the class after pointer exit
+- [X] Ignore empty elements
+- [X] Ignore form controls
 
 Definition of done:
 

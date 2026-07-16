@@ -3,6 +3,7 @@
   "name": "FocusInk",
   "version": "0.1.0",
   "description": "Enhances webpage text under the cursor for focused reading.",
+  "permissions": ["storage"],
   "action": {
     "default_title": "FocusInk",
     "default_popup": "src/popup/popup.html"

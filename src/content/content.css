@@ -1,15 +1,24 @@
-/*
- * FocusInk webpage styles
- */
+.focusink-focused--light {
+  filter: contrast(1.15) !important;
+}
 
-.focusink-focused {
+.focusink-focused--medium {
   filter: contrast(1.25) !important;
 
   text-shadow:
-    0.3px 0 currentColor,
-    -0.3px 0 currentColor !important;
+    0.25px 0 currentColor,
+    -0.25px 0 currentColor !important;
+}
 
-  background-color: rgb(
-    255 229 100 / 28%
-  ) !important;
+.focusink-focused--strong {
+  filter: contrast(1.4) !important;
+
+  text-shadow:
+    0.4px 0 currentColor,
+    -0.4px 0 currentColor !important;
+
+  background-color:
+    rgb(255 229 100 / 32%) !important;
+
+  border-radius: 3px;
 }

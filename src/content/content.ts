@@ -1,4 +1,20 @@
-const FOCUS_CLASS = "focusink-focused";
+(() => {
+  const DEFAULT_SETTINGS: ExtensionSettings = {
+    enabled: true,
+    intensity: "medium",
+  };
+
+  const VALID_INTENSITIES: FocusIntensity[] = [
+    "light",
+    "medium",
+    "strong",
+  ];
+
+const FOCUS_CLASSES = [
+  "focusink-focused--light",
+  "focusink-focused--medium",
+  "focusink-focused--strong",
+];
 
 const SUPPORTED_SELECTOR = [
   "p",
@@ -27,12 +43,53 @@ const EXCLUDED_SELECTOR = [
   "[contenteditable='true']",
 ].join(",");
 
-let focusedElement: HTMLElement | null = null;
+let settings: ExtensionSettings =
+  DEFAULT_SETTINGS;
 
-/**
- * Check whether an element contains visible, meaningful text.
- */
-function hasMeaningfulText(element: HTMLElement): boolean {
+let focusedElement: HTMLElement | null =
+  null;
+
+function isFocusIntensity(
+  value: unknown,
+): value is FocusIntensity {
+  return (
+    typeof value === "string" &&
+    VALID_INTENSITIES.includes(
+      value as FocusIntensity,
+    )
+  );
+}
+
+function normaliseSettings(
+  value: unknown,
+): ExtensionSettings {
+  if (
+    typeof value !== "object" ||
+    value === null
+  ) {
+    return DEFAULT_SETTINGS;
+  }
+
+  const candidate =
+    value as Partial<ExtensionSettings>;
+
+  return {
+    enabled:
+      typeof candidate.enabled === "boolean"
+        ? candidate.enabled
+        : DEFAULT_SETTINGS.enabled,
+
+    intensity: isFocusIntensity(
+      candidate.intensity,
+    )
+      ? candidate.intensity
+      : DEFAULT_SETTINGS.intensity,
+  };
+}
+
+function hasMeaningfulText(
+  element: HTMLElement,
+): boolean {
   const text = element.textContent
     ?.replace(/\s+/g, " ")
     .trim();
@@ -40,18 +97,20 @@ function hasMeaningfulText(element: HTMLElement): boolean {
   return Boolean(text);
 }
 
-/**
- * Find the nearest readable element from the pointer target.
- */
-function findReadableElement(target: Element): HTMLElement | null {
-  const excludedElement = target.closest(EXCLUDED_SELECTOR);
+function findReadableElement(
+  target: Element,
+): HTMLElement | null {
+  const excludedElement =
+    target.closest(EXCLUDED_SELECTOR);
 
   if (excludedElement) {
     return null;
   }
 
   const readableElement =
-    target.closest<HTMLElement>(SUPPORTED_SELECTOR);
+    target.closest<HTMLElement>(
+      SUPPORTED_SELECTOR,
+    );
 
   if (!readableElement) {
     return null;
@@ -64,29 +123,48 @@ function findReadableElement(target: Element): HTMLElement | null {
   return readableElement;
 }
 
-/**
- * Remove FocusInk styling from the current element.
- */
+function removeFocusClasses(
+  element: HTMLElement,
+): void {
+  element.classList.remove(
+    ...FOCUS_CLASSES,
+  );
+}
+
+function applyFocusStyle(
+  element: HTMLElement,
+): void {
+  removeFocusClasses(element);
+
+  element.classList.add(
+    `focusink-focused--${settings.intensity}`,
+  );
+}
+
 function clearFocusedElement(): void {
   if (!focusedElement) {
     return;
   }
 
-  focusedElement.classList.remove(FOCUS_CLASS);
+  removeFocusClasses(focusedElement);
   focusedElement = null;
 }
 
-/**
- * Handle the pointer entering a webpage element.
- */
-function handlePointerOver(event: PointerEvent): void {
+function handlePointerOver(
+  event: PointerEvent,
+): void {
+  if (!settings.enabled) {
+    return;
+  }
+
   const target = event.target;
 
   if (!(target instanceof Element)) {
     return;
   }
 
-  const nextElement = findReadableElement(target);
+  const nextElement =
+    findReadableElement(target);
 
   if (nextElement === focusedElement) {
     return;
@@ -98,14 +176,13 @@ function handlePointerOver(event: PointerEvent): void {
     return;
   }
 
-  nextElement.classList.add(FOCUS_CLASS);
+  applyFocusStyle(nextElement);
   focusedElement = nextElement;
 }
 
-/**
- * Handle the pointer leaving the focused element.
- */
-function handlePointerOut(event: PointerEvent): void {
+function handlePointerOut(
+  event: PointerEvent,
+): void {
   if (!focusedElement) {
     return;
   }
@@ -116,7 +193,9 @@ function handlePointerOut(event: PointerEvent): void {
     return;
   }
 
-  if (!focusedElement.contains(previousTarget)) {
+  if (
+    !focusedElement.contains(previousTarget)
+  ) {
     return;
   }
 
@@ -132,14 +211,71 @@ function handlePointerOut(event: PointerEvent): void {
   clearFocusedElement();
 }
 
-document.addEventListener(
-  "pointerover",
-  handlePointerOver,
-);
+function handleStorageChange(
+  changes: {
+    [key: string]:
+      chrome.storage.StorageChange;
+  },
+  areaName: string,
+): void {
+  if (
+    areaName !== "sync" ||
+    !changes.settings
+  ) {
+    return;
+  }
 
-document.addEventListener(
-  "pointerout",
-  handlePointerOut,
-);
+  settings = normaliseSettings(
+    changes.settings.newValue,
+  );
 
-console.log("[FocusInk] Text focus is active.");
+  if (!settings.enabled) {
+    clearFocusedElement();
+    return;
+  }
+
+  if (focusedElement) {
+    applyFocusStyle(focusedElement);
+  }
+}
+
+async function initialise(): Promise<void> {
+  try {
+    const stored =
+      await chrome.storage.sync.get({
+        settings: DEFAULT_SETTINGS,
+      });
+
+    settings = normaliseSettings(
+      stored.settings,
+    );
+  } catch (error) {
+    console.error(
+      "[FocusInk] Failed to load settings:",
+      error,
+    );
+
+    settings = DEFAULT_SETTINGS;
+  }
+  document.addEventListener(
+    "pointerover",
+    handlePointerOver,
+  );
+
+  document.addEventListener(
+    "pointerout",
+    handlePointerOut,
+  );
+
+  chrome.storage.onChanged.addListener(
+    handleStorageChange,
+  );
+
+  console.log(
+    "[FocusInk] Initialised with settings:",
+    settings,
+  );
+}
+void initialise();
+})();
+
