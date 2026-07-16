@@ -1,24 +1,25 @@
-.focusink-focused--light {
-  filter: contrast(1.15) !important;
+/*
+ * FocusInk webpage styles
+ */
+
+::highlight(focusink-token) {
+  background-color: rgb(255 229 100 / 28%);
 }
 
-.focusink-focused--medium {
-  filter: contrast(1.25) !important;
+:root[data-focusink-intensity="light"]::highlight(focusink-token) {
+  background-color: rgb(255 229 100 / 16%);
+}
 
+:root[data-focusink-intensity="medium"]::highlight(focusink-token) {
+  background-color: rgb(255 229 100 / 28%);
   text-shadow:
     0.25px 0 currentColor,
-    -0.25px 0 currentColor !important;
+    -0.25px 0 currentColor;
 }
 
-.focusink-focused--strong {
-  filter: contrast(1.4) !important;
-
+:root[data-focusink-intensity="strong"]::highlight(focusink-token) {
+  background-color: rgb(255 229 100 / 42%);
   text-shadow:
     0.4px 0 currentColor,
-    -0.4px 0 currentColor !important;
-
-  background-color:
-    rgb(255 229 100 / 32%) !important;
-
-  border-radius: 3px;
+    -0.4px 0 currentColor;
 }

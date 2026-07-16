@@ -1,20 +1,16 @@
 (() => {
-  const DEFAULT_SETTINGS: ExtensionSettings = {
-    enabled: true,
-    intensity: "medium",
-  };
+const DEFAULT_SETTINGS: ExtensionSettings = {
+  enabled: true,
+  intensity: "medium",
+};
 
-  const VALID_INTENSITIES: FocusIntensity[] = [
-    "light",
-    "medium",
-    "strong",
-  ];
-
-const FOCUS_CLASSES = [
-  "focusink-focused--light",
-  "focusink-focused--medium",
-  "focusink-focused--strong",
+const VALID_INTENSITIES: FocusIntensity[] = [
+  "light",
+  "medium",
+  "strong",
 ];
+
+const HIGHLIGHT_NAME = "focusink-token";
 
 const SUPPORTED_SELECTOR = [
   "p",
@@ -28,7 +24,12 @@ const SUPPORTED_SELECTOR = [
   "h5",
   "h6",
   "blockquote",
-  "article",
+  "figcaption",
+  "label",
+  "td",
+  "th",
+  "dt",
+  "dd",
 ].join(",");
 
 const EXCLUDED_SELECTOR = [
@@ -40,14 +41,72 @@ const EXCLUDED_SELECTOR = [
   "style",
   "code",
   "pre",
+  "canvas",
+  "svg",
+  "video",
+  "audio",
   "[contenteditable='true']",
+  "[role='button']",
+  "[aria-hidden='true']",
 ].join(",");
+
+const WORD_CHAR_PATTERN = /[\p{L}\p{N}_'-]/u;
 
 let settings: ExtensionSettings =
   DEFAULT_SETTINGS;
 
-let focusedElement: HTMLElement | null =
-  null;
+const tokenHighlight = new Highlight();
+CSS.highlights.set(HIGHLIGHT_NAME, tokenHighlight);
+
+let highlightedNode: Node | null = null;
+let highlightedStart = -1;
+let highlightedEnd = -1;
+
+function isWordChar(character: string): boolean {
+  return WORD_CHAR_PATTERN.test(character);
+}
+
+interface TokenBounds {
+  start: number;
+  end: number;
+}
+
+/**
+ * Find the start/end offsets of the token surrounding a caret offset
+ * within a single text node's data.
+ */
+function findTokenBounds(
+  text: string,
+  offset: number,
+): TokenBounds | null {
+  let index = Math.min(offset, text.length - 1);
+
+  if (index < 0) {
+    return null;
+  }
+
+  if (!isWordChar(text[index])) {
+    if (index > 0 && isWordChar(text[index - 1])) {
+      index -= 1;
+    } else {
+      return null;
+    }
+  }
+
+  let start = index;
+
+  while (start > 0 && isWordChar(text[start - 1])) {
+    start -= 1;
+  }
+
+  let end = index + 1;
+
+  while (end < text.length && isWordChar(text[end])) {
+    end += 1;
+  }
+
+  return { start, end };
+}
 
 function isFocusIntensity(
   value: unknown,
@@ -87,134 +146,172 @@ function normaliseSettings(
   };
 }
 
-function hasMeaningfulText(
-  element: HTMLElement,
-): boolean {
-  const text = element.textContent
-    ?.replace(/\s+/g, " ")
-    .trim();
-
-  return Boolean(text);
-}
-
-function findReadableElement(
-  target: Element,
-): HTMLElement | null {
-  const excludedElement =
-    target.closest(EXCLUDED_SELECTOR);
-
-  if (excludedElement) {
-    return null;
-  }
-
-  const readableElement =
-    target.closest<HTMLElement>(
-      SUPPORTED_SELECTOR,
-    );
-
-  if (!readableElement) {
-    return null;
-  }
-
-  if (!hasMeaningfulText(readableElement)) {
-    return null;
-  }
-
-  return readableElement;
-}
-
-function removeFocusClasses(
-  element: HTMLElement,
+/**
+ * Reflect the current intensity onto the document so content.css can
+ * style the highlight pseudo-element per intensity level.
+ */
+function applyIntensity(
+  intensity: FocusIntensity,
 ): void {
-  element.classList.remove(
-    ...FOCUS_CLASSES,
-  );
+  document.documentElement.dataset.focusinkIntensity =
+    intensity;
 }
 
-function applyFocusStyle(
-  element: HTMLElement,
-): void {
-  removeFocusClasses(element);
-
-  element.classList.add(
-    `focusink-focused--${settings.intensity}`,
-  );
-}
-
-function clearFocusedElement(): void {
-  if (!focusedElement) {
+/**
+ * Remove the current token highlight, if any.
+ */
+function clearTokenHighlight(): void {
+  if (!highlightedNode) {
     return;
   }
 
-  removeFocusClasses(focusedElement);
-  focusedElement = null;
+  tokenHighlight.clear();
+  highlightedNode = null;
+  highlightedStart = -1;
+  highlightedEnd = -1;
 }
 
-function handlePointerOver(
-  event: PointerEvent,
-): void {
+/**
+ * Resolve the exact text node and character offset under a viewport point.
+ */
+function getCaretPosition(
+  x: number,
+  y: number,
+): { node: Node; offset: number } | null {
+  if (document.caretPositionFromPoint) {
+    const position = document.caretPositionFromPoint(x, y);
+
+    if (!position) {
+      return null;
+    }
+
+    return { node: position.offsetNode, offset: position.offset };
+  }
+
+  if (document.caretRangeFromPoint) {
+    const range = document.caretRangeFromPoint(x, y);
+
+    if (!range) {
+      return null;
+    }
+
+    return { node: range.startContainer, offset: range.startOffset };
+  }
+
+  return null;
+}
+
+/**
+ * Recompute and apply the token highlight for a viewport point.
+ */
+function updateTokenHighlight(x: number, y: number): void {
   if (!settings.enabled) {
+    clearTokenHighlight();
     return;
   }
 
-  const target = event.target;
+  const caret = getCaretPosition(x, y);
 
-  if (!(target instanceof Element)) {
+  if (!caret || caret.node.nodeType !== Node.TEXT_NODE) {
+    clearTokenHighlight();
     return;
   }
 
-  const nextElement =
-    findReadableElement(target);
+  const textNode = caret.node;
+  const parentElement = textNode.parentElement;
 
-  if (nextElement === focusedElement) {
+  if (!parentElement) {
+    clearTokenHighlight();
     return;
   }
 
-  clearFocusedElement();
-
-  if (!nextElement) {
+  if (parentElement.closest(EXCLUDED_SELECTOR)) {
+    clearTokenHighlight();
     return;
   }
 
-  applyFocusStyle(nextElement);
-  focusedElement = nextElement;
+  if (!parentElement.closest(SUPPORTED_SELECTOR)) {
+    clearTokenHighlight();
+    return;
+  }
+
+  const bounds = findTokenBounds(
+    textNode.textContent ?? "",
+    caret.offset,
+  );
+
+  if (!bounds) {
+    clearTokenHighlight();
+    return;
+  }
+
+  if (
+    textNode === highlightedNode &&
+    bounds.start === highlightedStart &&
+    bounds.end === highlightedEnd
+  ) {
+    return;
+  }
+
+  const range = document.createRange();
+  range.setStart(textNode, bounds.start);
+  range.setEnd(textNode, bounds.end);
+
+  tokenHighlight.clear();
+  tokenHighlight.add(range);
+
+  highlightedNode = textNode;
+  highlightedStart = bounds.start;
+  highlightedEnd = bounds.end;
 }
 
-function handlePointerOut(
-  event: PointerEvent,
-): void {
-  if (!focusedElement) {
+let pendingX = 0;
+let pendingY = 0;
+let updateScheduled = false;
+
+/**
+ * Handle pointer movement, throttled to one update per animation frame.
+ */
+function handlePointerMove(event: PointerEvent): void {
+  pendingX = event.clientX;
+  pendingY = event.clientY;
+
+  if (updateScheduled) {
     return;
   }
 
-  const previousTarget = event.target;
+  updateScheduled = true;
 
-  if (!(previousTarget instanceof Node)) {
+  requestAnimationFrame(() => {
+    updateScheduled = false;
+    updateTokenHighlight(pendingX, pendingY);
+  });
+}
+
+/**
+ * Clear the highlight once the pointer leaves the page entirely.
+ */
+function handlePointerOut(event: PointerEvent): void {
+  if (event.relatedTarget !== null) {
     return;
   }
 
-  if (
-    !focusedElement.contains(previousTarget)
-  ) {
-    return;
+  clearTokenHighlight();
+}
+
+function handleWindowBlur(): void {
+  clearTokenHighlight();
+}
+
+function handleVisibilityChange(): void {
+  if (document.hidden) {
+    clearTokenHighlight();
   }
-
-  const nextTarget = event.relatedTarget;
-
-  if (
-    nextTarget instanceof Node &&
-    focusedElement.contains(nextTarget)
-  ) {
-    return;
-  }
-
-  clearFocusedElement();
 }
 
 function handleStorageChange(
   changes: {
-    [key: string]:
-      chrome.storage.StorageChange;
+    [key: string]: chrome.storage.StorageChange;
   },
   areaName: string,
 ): void {
@@ -229,13 +326,10 @@ function handleStorageChange(
     changes.settings.newValue,
   );
 
-  if (!settings.enabled) {
-    clearFocusedElement();
-    return;
-  }
+  applyIntensity(settings.intensity);
 
-  if (focusedElement) {
-    applyFocusStyle(focusedElement);
+  if (!settings.enabled) {
+    clearTokenHighlight();
   }
 }
 
@@ -257,14 +351,27 @@ async function initialise(): Promise<void> {
 
     settings = DEFAULT_SETTINGS;
   }
+
+  applyIntensity(settings.intensity);
+
   document.addEventListener(
-    "pointerover",
-    handlePointerOver,
+    "pointermove",
+    handlePointerMove,
   );
 
   document.addEventListener(
     "pointerout",
     handlePointerOut,
+  );
+
+  window.addEventListener(
+    "blur",
+    handleWindowBlur,
+  );
+
+  document.addEventListener(
+    "visibilitychange",
+    handleVisibilityChange,
   );
 
   chrome.storage.onChanged.addListener(
@@ -276,6 +383,6 @@ async function initialise(): Promise<void> {
     settings,
   );
 }
+
 void initialise();
 })();
-

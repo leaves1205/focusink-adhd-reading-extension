@@ -42,11 +42,11 @@ Definition of done:
 
 ## Milestone 3: Popup Settings
 
-- [ ] Add enabled/disabled switch
-- [ ] Add intensity selector
-- [ ] Add light style
-- [ ] Add medium style
-- [ ] Add strong style
+- [X] Add enabled/disabled switch
+- [X] Add intensity selector
+- [X] Add light style
+- [X] Add medium style
+- [X] Add strong style
 
 ## Milestone 4: Persistent Settings
 
