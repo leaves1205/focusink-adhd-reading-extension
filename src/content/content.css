@@ -1,5 +1,15 @@
 /*
  * FocusInk webpage styles
- *
- * Text focus classes will be added here in the next milestone.
  */
+
+.focusink-focused {
+  filter: contrast(1.25) !important;
+
+  text-shadow:
+    0.3px 0 currentColor,
+    -0.3px 0 currentColor !important;
+
+  background-color: rgb(
+    255 229 100 / 28%
+  ) !important;
+}
