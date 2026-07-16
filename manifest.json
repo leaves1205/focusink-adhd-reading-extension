@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "FocusInk",
+  "version": "0.1.0",
+  "description": "Enhances webpage text under the cursor for focused reading.",
+  "action": {
+    "default_title": "FocusInk",
+    "default_popup": "src/popup/popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/content/content.js"],
+      "css": ["src/content/content.css"],
+      "run_at": "document_idle"
+    }
+  ]
+}

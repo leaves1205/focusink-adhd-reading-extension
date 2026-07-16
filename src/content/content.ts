@@ -1,0 +1,1 @@
+console.log("[FocusInk] Content Script loaded successfully.");
