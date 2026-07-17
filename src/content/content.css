@@ -2,23 +2,17 @@
  * FocusInk webpage styles
  */
 
-::highlight(focusink-token) {
-  background-color: rgb(255 229 100 / 28%);
+::highlight(focusink-highlight) {
+  background-color: var(--focusink-bg, rgb(255 229 100 / 28%));
 }
 
-:root[data-focusink-intensity="light"]::highlight(focusink-token) {
-  background-color: rgb(255 229 100 / 16%);
-}
-
-:root[data-focusink-intensity="medium"]::highlight(focusink-token) {
-  background-color: rgb(255 229 100 / 28%);
+:root[data-focusink-intensity="medium"]::highlight(focusink-highlight) {
   text-shadow:
     0.25px 0 currentColor,
     -0.25px 0 currentColor;
 }
 
-:root[data-focusink-intensity="strong"]::highlight(focusink-token) {
-  background-color: rgb(255 229 100 / 42%);
+:root[data-focusink-intensity="strong"]::highlight(focusink-highlight) {
   text-shadow:
     0.4px 0 currentColor,
     -0.4px 0 currentColor;

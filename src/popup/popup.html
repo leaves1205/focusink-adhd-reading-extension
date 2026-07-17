@@ -16,16 +16,13 @@
   <body>
     <main class="popup">
       <header class="popup__header">
-        <div>
-          <h1>FocusInk</h1>
-          <p>Keep your eyes on the words that matter.</p>
-        </div>
-      </header>
+        <div class="popup__brand">
+          <span class="popup__logo" aria-hidden="true">◆</span>
 
-      <section class="setting">
-        <div class="setting__content">
-          <label for="enabled">Enable FocusInk</label>
-          <p>Enhance readable text under your cursor.</p>
+          <div>
+            <h1>FocusInk</h1>
+            <p>Keep your eyes on the words that matter.</p>
+          </div>
         </div>
 
         <label class="switch">
@@ -36,26 +33,77 @@
 
           <span class="switch__slider"></span>
         </label>
+      </header>
+
+      <section class="card">
+        <h2 class="card__title">Focus mode</h2>
+
+        <div
+          class="segmented"
+          role="radiogroup"
+          aria-label="Focus mode"
+        >
+          <label class="segmented__option">
+            <input
+              type="radio"
+              name="mode"
+              id="modeToken"
+              value="token"
+            />
+            <span>Single word</span>
+          </label>
+
+          <label class="segmented__option">
+            <input
+              type="radio"
+              name="mode"
+              id="modeParagraph"
+              value="paragraph"
+            />
+            <span>Paragraph</span>
+          </label>
+        </div>
+
+        <p class="card__hint">
+          Single word follows your cursor precisely. Paragraph
+          highlights the whole block you're hovering.
+        </p>
       </section>
 
-      <section class="intensity">
-        <label for="intensity">
-          Focus intensity
-        </label>
+      <section class="card">
+        <h2 class="card__title">Appearance</h2>
 
-        <select id="intensity">
-          <option value="light">
-            Light
-          </option>
+        <div class="field">
+          <label for="intensity">Focus intensity</label>
 
-          <option value="medium">
-            Medium
-          </option>
+          <select id="intensity">
+            <option value="light">Light</option>
+            <option value="medium">Medium</option>
+            <option value="strong">Strong</option>
+          </select>
+        </div>
 
-          <option value="strong">
-            Strong
-          </option>
-        </select>
+        <div class="field">
+          <label for="color">Highlight color</label>
+          <input id="color" type="color" />
+        </div>
+
+        <div class="field">
+          <label for="saturation">Saturation</label>
+
+          <div class="field__slider">
+            <input
+              id="saturation"
+              type="range"
+              min="0"
+              max="100"
+            />
+
+            <span id="saturationValue" class="field__value">
+              100%
+            </span>
+          </div>
+        </div>
       </section>
 
       <p
