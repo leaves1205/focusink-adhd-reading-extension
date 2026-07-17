@@ -1,6 +1,9 @@
 node_modules/
 dist/
+release/
 .vscode/
 *.log
 .DS_Store
 .claude
+docs/store-listing.md
+public

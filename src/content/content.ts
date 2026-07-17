@@ -585,11 +585,6 @@ async function initialise(): Promise<void> {
   chrome.storage.onChanged.addListener(
     handleStorageChange,
   );
-
-  console.log(
-    "[FocusInk] Initialised with settings:",
-    settings,
-  );
 }
 
 void initialise();
